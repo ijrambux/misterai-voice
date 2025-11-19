@@ -1,0 +1,27 @@
+body {
+  background: #0d0d0d;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: white;
+  font-family: "Cairo", sans-serif;
+}
+
+button {
+  background: #6246ea;
+  border: none;
+  padding: 20px 40px;
+  border-radius: 15px;
+  color: white;
+  font-size: 25px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:active {
+  transform: scale(0.95);
+  background: #7254ff;
+}
