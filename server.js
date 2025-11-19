@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -12,18 +11,16 @@ app.use(express.static("public"));
 io.on("connection", socket => {
     console.log("User connected:", socket.id);
 
-    // إرسال رسالة كتابية
-    socket.on("sendMessage", data => {
-        io.emit("receiveMessage", data);
+    socket.on("sendMessage", msg => {
+        io.emit("receiveMessage", msg);
     });
 
-    // إرسال صوت
     socket.on("voiceData", data => {
         socket.broadcast.emit("voiceData", data);
     });
 
     socket.on("disconnect", () => {
-        console.log("User left:", socket.id);
+        console.log("User disconnected:", socket.id);
     });
 });
 
