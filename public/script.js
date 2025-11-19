@@ -1,31 +1,49 @@
-const ws = new WebSocket(
-  (location.protocol === "https:" ? "wss://" : "ws://") + location.host
-);
+const socket = io();
 
-let mediaRecorder;
-let audioChunks = [];
+// إرسال رسالة
+function sendMessage() {
+    const input = document.getElementById("msgInput");
+    if (input.value.trim() !== "") {
+        socket.emit("sendMessage", input.value);
+        input.value = "";
+    }
+}
 
-navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-  mediaRecorder = new MediaRecorder(stream);
-
-  mediaRecorder.ondataavailable = e => {
-    ws.send(e.data);
-  };
+// استقبال رسالة
+socket.on("receiveMessage", msg => {
+    document.getElementById("messages").innerHTML += `<p>💬 ${msg}</p>`;
 });
 
-document.getElementById("pttBtn").onmousedown = () => {
-  audioChunks = [];
-  mediaRecorder.start(100); // تسجيل كل 100ms
+// تسجيل صوت وارساله
+let mediaRecorder;
+let chunks = [];
+
+navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = e => {
+        chunks.push(e.data);
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        chunks = [];
+
+        blob.arrayBuffer().then(buffer => {
+            socket.emit("voiceData", buffer);
+        });
+    };
+});
+
+document.getElementById("voiceBtn").onmousedown = () => {
+    mediaRecorder.start(200);
 };
 
-document.getElementById("pttBtn").onmouseup = () => {
-  mediaRecorder.stop();
+document.getElementById("voiceBtn").onmouseup = () => {
+    mediaRecorder.stop();
 };
 
-// استقبال الصوت وتشغيله
-ws.onmessage = e => {
-  const audioBlob = new Blob([e.data], { type: "audio/webm" });
-  const audioUrl = URL.createObjectURL(audioBlob);
-  const audio = new Audio(audioUrl);
-  audio.play();
-};
+// تشغيل الصوت عند وصوله
+socket.on("voiceData", buffer => {
+    const blob = new Blob([buffer], { type: "audio/webm" });
+    const audio = new Audio(URL.createObjectURL(blob));
+    audio.play();
+});
+
