@@ -3,10 +3,10 @@ const socket = io();
 // إرسال رسالة
 function sendMessage() {
     const input = document.getElementById("msgInput");
-    if (input.value.trim() !== "") {
-        socket.emit("sendMessage", input.value);
-        input.value = "";
-    }
+    if (input.value.trim() === "") return;
+
+    socket.emit("sendMessage", input.value);
+    input.value = "";
 }
 
 // استقبال رسالة
@@ -14,14 +14,14 @@ socket.on("receiveMessage", msg => {
     document.getElementById("messages").innerHTML += `<p>💬 ${msg}</p>`;
 });
 
-// تسجيل صوت وارساله
-let mediaRecorder;
+// تسجيل صوت وإرساله
+let recorder;
 let chunks = [];
 
 navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    mediaRecorder = new MediaRecorder(stream);
+    recorder = new MediaRecorder(stream);
 
-    mediaRecorder.ondataavailable = e => {
+    recorder.ondataavailable = e => {
         chunks.push(e.data);
         const blob = new Blob(chunks, { type: "audio/webm" });
         chunks = [];
@@ -32,18 +32,13 @@ navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     };
 });
 
-document.getElementById("voiceBtn").onmousedown = () => {
-    mediaRecorder.start(200);
-};
+const btn = document.getElementById("voiceBtn");
 
-document.getElementById("voiceBtn").onmouseup = () => {
-    mediaRecorder.stop();
-};
+btn.onmousedown = () => recorder.start(300);
+btn.onmouseup = () => recorder.stop();
 
-// تشغيل الصوت عند وصوله
+// استقبال صوت وتشغيله
 socket.on("voiceData", buffer => {
     const blob = new Blob([buffer], { type: "audio/webm" });
-    const audio = new Audio(URL.createObjectURL(blob));
-    audio.play();
+    new Audio(URL.createObjectURL(blob)).play();
 });
-
