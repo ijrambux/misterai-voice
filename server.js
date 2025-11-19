@@ -1,30 +1,32 @@
-const express = require("express");
-const path = require("path");
-const WebSocket = require("ws");
+// server.js
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const server = http.createServer(app);
+const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static("public"));
 
-const server = app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+io.on("connection", socket => {
+    console.log("User connected:", socket.id);
+
+    // إرسال رسالة كتابية
+    socket.on("sendMessage", data => {
+        io.emit("receiveMessage", data);
+    });
+
+    // إرسال صوت
+    socket.on("voiceData", data => {
+        socket.broadcast.emit("voiceData", data);
+    });
+
+    socket.on("disconnect", () => {
+        console.log("User left:", socket.id);
+    });
 });
 
-// WebSocket Server
-const wss = new WebSocket.Server({ server });
-
-wss.on("connection", ws => {
-  console.log("User connected");
-
-  ws.on("message", msg => {
-    // إعادة بث الصوت لكل المستخدمين
-    wss.clients.forEach(client => {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(msg);
-      }
-    });
-  });
-
-  ws.on("close", () => console.log("User disconnected"));
+server.listen(3000, () => {
+    console.log("Server running on port 3000");
 });
