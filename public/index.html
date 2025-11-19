@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>غرفة صوتية | Push-To-Talk</title>
+    <style>
+        body {
+            background: #111;
+            color: white;
+            font-family: sans-serif;
+            text-align: center;
+            padding-top: 100px;
+        }
+        button {
+            background: #5C4BFF;
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            font-size: 22px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🎤 غرفة صوتية Push-To-Talk</h1>
+
+<button id="talk">اضغط وتحدث 🎤</button>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    const socket = io();
+
+    const btn = document.getElementById("talk");
+    let mediaRecorder;
+    let audioChunks = [];
+
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = e => {
+            socket.emit("voice", e.data);
+        };
+
+        socket.on("voice", data => {
+            const audio = new Audio(URL.createObjectURL(data));
+            audio.play();
+        });
+    });
+
+    btn.onmousedown = () => mediaRecorder.start();
+    btn.onmouseup   = () => mediaRecorder.stop();
+</script>
+
+</body>
+</html>
