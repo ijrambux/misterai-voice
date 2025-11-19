@@ -1,5 +1,5 @@
 {
-  "name": "misterai-voice",
+  "name": "misterai-chat",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
@@ -7,6 +7,6 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "ws": "^8.13.0"
+    "socket.io": "^4.7.2"
   }
 }
