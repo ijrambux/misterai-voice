@@ -8,11 +8,20 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
-io.on("connection", socket => {
-    console.log("User connected:", socket.id);
+let users = [];
 
-    socket.on("sendMessage", msg => {
-        io.emit("receiveMessage", msg);
+io.on("connection", socket => {
+    
+    socket.on("join", user => {
+        socket.userName = user;
+        users.push(user);
+
+        io.emit("systemMessage", `🔵 ${user} انضم إلى الدردشة`);
+        io.emit("updateUsers", users);
+    });
+
+    socket.on("sendMessage", data => {
+        io.emit("receiveMessage", data);
     });
 
     socket.on("voiceData", data => {
@@ -20,10 +29,14 @@ io.on("connection", socket => {
     });
 
     socket.on("disconnect", () => {
-        console.log("User disconnected:", socket.id);
+        if (socket.userName) {
+            users = users.filter(u => u !== socket.userName);
+            io.emit("systemMessage", `🔴 ${socket.userName} غادر الدردشة`);
+            io.emit("updateUsers", users);
+        }
     });
 });
 
 server.listen(3000, () => {
-    console.log("Server running on port 3000");
+    console.log("🚀 Server running on port 3000");
 });
