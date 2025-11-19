@@ -1,60 +1,90 @@
 const socket = io();
 
-let userName = "Mister AI 🤖";
-let recorder;
-let chunks = [];
+const msgInput = document.getElementById("msgInput");
+const sendBtn = document.getElementById("sendBtn");
+const messages = document.getElementById("messages");
+const users = document.getElementById("users");
+const talkBtn = document.getElementById("talkBtn");
+const emojiBtn = document.getElementById("emojiBtn");
+const emojiPanel = document.getElementById("emojiPanel");
+const speakingStatus = document.getElementById("speakingStatus");
 
-// عند الدخول
-socket.emit("join", userName);
+// اسم عشوائي
+const username = "MisterAI_" + Math.floor(Math.random() * 9999);
+socket.emit("join", username);
 
-// تحديث قائمة المستخدمين
-socket.on("updateUsers", users => {
-    const usersList = users.map(u => `• ${u}`).join("<br>");
-    document.getElementById("users").innerHTML = `<strong>المتصلون:</strong><br>${usersList}`;
+// تحديث قائمة المتصلين
+socket.on("users", list => {
+    users.innerHTML = "";
+    list.forEach(u => users.innerHTML += `<li>👤 ${u}</li>`);
 });
 
-// إرسال رسالة كتابية
-function sendMessage() {
-    const input = document.getElementById("msgInput");
-    if (input.value.trim() === "") return;
-
-    socket.emit("sendMessage", { user: userName, msg: input.value });
-    input.value = "";
-}
+// إرسال رسالة
+sendBtn.onclick = () => {
+    if (msgInput.value.trim() !== "") {
+        socket.emit("chatMessage", msgInput.value);
+        msgInput.value = "";
+    }
+};
 
 // استقبال رسالة
-socket.on("receiveMessage", data => {
-    const { user, msg } = data;
-    document.getElementById("messages").innerHTML +=
-        `<p><strong>${user}:</strong> ${msg}</p>`;
+socket.on("chatMessage", data => {
+    messages.innerHTML += `<p><strong>${data.user}:</strong> ${data.msg}</p>`;
+    messages.scrollTop = messages.scrollHeight;
 });
 
-// إشعارات النظام
-socket.on("systemMessage", msg => {
-    document.getElementById("messages").innerHTML += `<p class="system">${msg}</p>`;
-});
+// ===== لوحة الإيموجي =====
+emojiBtn.onclick = () => {
+    emojiPanel.classList.toggle("hidden");
+};
 
-// تفعيل المايك
-navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    recorder = new MediaRecorder(stream);
-
-    recorder.ondataavailable = e => {
-        chunks.push(e.data);
-        const blob = new Blob(chunks, { type: "audio/webm" });
-        chunks = [];
-
-        blob.arrayBuffer().then(buffer => {
-            socket.emit("voiceData", buffer);
-        });
+emojiPanel.querySelectorAll("*").forEach(em => {
+    em.onclick = () => {
+        msgInput.value += " " + em.innerText;
+        emojiPanel.classList.add("hidden");
     };
 });
 
-const btn = document.getElementById("voiceBtn");
-btn.onmousedown = () => recorder.start(300);
-btn.onmouseup = () => recorder.stop();
+// ===== الصوت Push-To-Talk =====
+let recorder;
+let chunks = [];
 
-// استقبال صوت
-socket.on("voiceData", buffer => {
-    const blob = new Blob([buffer], { type: "audio/webm" });
+navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    recorder = new MediaRecorder(stream);
+
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        chunks = [];
+        socket.emit("voice", blob);
+        socket.emit("stopSpeaking", username);
+    };
+});
+
+// بداية التحدث
+talkBtn.onmousedown = () => {
+    talkBtn.classList.add("recording");
+    recorder.start();
+    socket.emit("speaking", username);
+};
+
+// توقف التحدث
+talkBtn.onmouseup = () => {
+    talkBtn.classList.remove("recording");
+    recorder.stop();
+};
+
+// تشغيل صوت الآخرين
+socket.on("voice", blob => {
     new Audio(URL.createObjectURL(blob)).play();
+});
+
+// إظهار المتحدث
+socket.on("speaking", user => {
+    speakingStatus.innerHTML = `🎤 ${user} يتحدث الآن...`;
+});
+
+// إخفاء الإشارة
+socket.on("stopSpeaking", () => {
+    speakingStatus.innerHTML = "";
 });
