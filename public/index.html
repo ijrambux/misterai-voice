@@ -1,28 +1,48 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>Mister AI 🤖 – دردشة صوتية وكتابية</title>
+    <title>Mister AI 🤖 • Voice & Text Chat</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<div class="chat-container">
+<div class="overlay"></div>
 
-    <h1 class="title">Mister AI 🤖 – غرفة الدردشة</h1>
+<header>
+    <h1>🧠 Mister AI 🤖 • غرفة دردشة صوتية وكتابية</h1>
+</header>
 
-    <div id="users" class="users-list"></div>
+<main class="container">
 
-    <div id="messages" class="messages"></div>
+    <aside class="users-box">
+        <h2>المتواجدون</h2>
+        <ul id="users"></ul>
+        <div id="speakingStatus"></div>
+    </aside>
 
-    <div class="input-area">
-        <input type="text" id="msgInput" placeholder="اكتب رسالة...">
-        <button onclick="sendMessage()">إرسال</button>
-    </div>
+    <section class="chat-box">
 
-    <button id="voiceBtn" class="voice-btn">🎙️ اضغط وتحدث</button>
+        <div id="messages"></div>
 
-</div>
+        <div class="input-area">
+            <button id="emojiBtn">😊</button>
+
+            <input id="msgInput" type="text" placeholder="اكتب رسالة...">
+
+            <button id="sendBtn">إرسال</button>
+        </div>
+
+        <div id="emojiPanel" class="emoji-panel hidden">
+            😀 😁 😂 🤣 😊 😍 😘 😎 🤩 😡 😭 😱 👀 👋 👍 👎 🙏 💀 🔥 ❤️ 💔 🎉 🎧 🤖 🎤
+        </div>
+
+        <button id="talkBtn" class="talk-btn">🎤 اضغط وتحدث</button>
+
+    </section>
+
+</main>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="script.js"></script>
