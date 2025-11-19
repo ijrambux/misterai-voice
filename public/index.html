@@ -1,146 +1,97 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<title>Mister AI Chat 🤖</title>
+<meta charset="UTF-8">
+<title>Mister AI Chat</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 
 <body>
-
 <canvas id="stars"></canvas>
 
 <div class="chat-container">
 
     <h1 class="title">🤖 دردشة Mister AI 💬</h1>
 
-    <div id="users" class="users-list"></div>
-
     <div id="messages" class="messages"></div>
 
-    <div class="input-section">
-        <input id="msg" placeholder="اكتب رسالتك هنا..." />
+    <div class="input-area">
+        <button id="voiceBtn">🎤 اضغط وتحدث</button>
+        <input id="msg" placeholder="اكتب رسالتك هنا...">
         <button onclick="sendMessage()">إرسال</button>
     </div>
-
-    <div class="emoji-bar">
-        <button onclick="addEmoji('🚀')">🚀</button>
-        <button onclick="addEmoji('❤️')">❤️</button>
-        <button onclick="addEmoji('🤖')">🤖</button>
-        <button onclick="addEmoji('🔥')">🔥</button>
-        <button onclick="addEmoji('😄')">😄</button>
-    </div>
-
-    <button class="voice-btn" id="voiceBtn">🎤 اضغط وتحدث</button>
-
 </div>
 
 <script>
-// الاتصال بالسيرفر
 const socket = io();
+const username = localStorage.getItem("nickname") || "مجهول";
 
-// إرسال رسالة
+// إرسال نص
 function sendMessage() {
     let input = document.getElementById("msg");
     if (input.value.trim() === "") return;
-
-    socket.emit("chatMessage", input.value);
+    socket.emit("chatMessage", { user: username, text: input.value });
     input.value = "";
 }
 
-// استقبال رسالة
-socket.on("chatMessage", (msg) => {
+// استلام نص
+socket.on("chatMessage", data => {
     let box = document.getElementById("messages");
     let div = document.createElement("div");
-    div.className = "message";
-    div.innerHTML = msg;
+    div.className = "msg";
+    div.innerHTML = `<strong>${data.user}:</strong> ${data.text}`;
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
 });
 
-// إضافة إموجي
-function addEmoji(e) {
-    document.getElementById("msg").value += e;
-}
-
-// ====== الصوت Push-To-Talk ======
-let voiceBtn = document.getElementById("voiceBtn");
-let mediaRecorder;
+// إرسال صوت
 let chunks = [];
-
-voiceBtn.onmousedown = async () => {
-    voiceBtn.innerHTML = "🎙️ جاري التسجيل…";
-    let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+let mediaRecorder;
+navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.start();
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+});
 
-    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+// زر الصوت
+document.getElementById("voiceBtn").onmousedown = () => {
+    mediaRecorder.start();
+    document.getElementById("voiceBtn").innerHTML = "🎙️ تسجيل...";
 };
 
-voiceBtn.onmouseup = () => {
-    voiceBtn.innerHTML = "🎤 اضغط وتحدث";
+document.getElementById("voiceBtn").onmouseup = () => {
     mediaRecorder.stop();
+    document.getElementById("voiceBtn").innerHTML = "🎤 اضغط وتحدث";
 
     mediaRecorder.onstop = () => {
         let blob = new Blob(chunks, { type: "audio/webm" });
         chunks = [];
+
         let reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = () => {
-            socket.emit("voiceMessage", reader.result);
+            socket.emit("voiceMessage", { user: username, audio: reader.result });
         };
     };
 };
 
-// استقبال صوت
-socket.on("voiceMessage", (audio) => {
-    let audioElem = document.createElement("audio");
-    audioElem.controls = true;
-    audioElem.src = audio;
-
+// استلام صوت
+socket.on("voiceMessage", data => {
     let box = document.getElementById("messages");
     let wrap = document.createElement("div");
-    wrap.className = "message";
-    wrap.appendChild(audioElem);
+    wrap.className = "msg";
+    wrap.innerHTML = `<strong>${data.user} 🎤:</strong><br>`;
 
+    let audioElem = document.createElement("audio");
+    audioElem.controls = true;
+    audioElem.src = data.audio;
+
+    wrap.appendChild(audioElem);
     box.appendChild(wrap);
     box.scrollTop = box.scrollHeight;
 });
-
-// ===== خلفية نجوم تتساقط =====
-const canvas = document.getElementById("stars");
-const ctx = canvas.getContext("2d");
-canvas.width = innerWidth;
-canvas.height = innerHeight;
-
-let stars = [];
-for (let i = 0; i < 200; i++) {
-    stars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        s: Math.random() * 2,
-        sp: Math.random() * 2 + 0.5
-    });
-}
-
-function animateStars() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    stars.forEach(st => {
-        st.y += st.sp;
-        if (st.y > canvas.height) {
-            st.y = -5;
-            st.x = Math.random() * canvas.width;
-        }
-        ctx.fillStyle = "#00ffc8";
-        ctx.beginPath();
-        ctx.arc(st.x, st.y, st.s, 0, 2 * Math.PI);
-        ctx.fill();
-    });
-    requestAnimationFrame(animateStars);
-}
-animateStars();
 </script>
 
+<script src="stars.js"></script>
 </body>
 </html>
