@@ -1,210 +1,145 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<title>Mister AI Chat</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-/* خلفية كاملة */
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-    background: #000;
-    font-family: "Tajawal", sans-serif;
-    color: #fff;
-}
-
-/* كأنڨڨڨڨڨڨڨڨڨفاص نجوم */
-#stars {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    background: transparent;
-}
-
-/* صندوق الدردشة */
-.chat-box {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 550px;
-    background: rgba(0, 0, 0, 0.5);
-    border: 2px solid #00ffc8;
-    border-radius: 15px;
-    padding: 20px;
-    text-align: center;
-    backdrop-filter: blur(6px);
-    box-shadow: 0 0 20px #00ffc8;
-}
-
-/* العنوان */
-h1 {
-    font-size: 32px;
-    margin-bottom: 15px;
-    color: #00ffc8;
-}
-
-/* الرسائل */
-#messages {
-    height: 250px;
-    overflow-y: auto;
-    padding: 10px;
-    text-align: right;
-    border-radius: 10px;
-    border: 1px solid #00ffc8;
-    background: rgba(255,255,255,0.05);
-    margin-bottom: 15px;
-}
-
-/* كل رسالة */
-.message {
-    padding: 6px 10px;
-    margin-bottom: 8px;
-    background: rgba(0,255,200,0.15);
-    border-radius: 8px;
-    box-shadow: 0 0 8px #00ffc8;
-}
-
-/* مربع الكتابة */
-input {
-    width: 75%;
-    padding: 12px;
-    border-radius: 10px;
-    border: 2px solid #00ffc8;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    font-size: 16px;
-    outline: none;
-}
-
-/* زر إرسال */
-button {
-    padding: 12px 20px;
-    margin-left: 8px;
-    border: none;
-    border-radius: 10px;
-    background: #4d37ff;
-    color: #fff;
-    cursor: pointer;
-    font-size: 16px;
-    box-shadow: 0 0 10px #4d37ff;
-    transition: 0.2s;
-}
-button:hover {
-    background: #6b5cff;
-    box-shadow: 0 0 20px #6b5cff;
-}
-
-/* إموجيات */
-.emoji-btn {
-    background: none;
-    border: none;
-    font-size: 26px;
-    cursor: pointer;
-    margin-top: 10px;
-}
-</style>
+<meta charset="UTF-8" />
+<title>Mister AI Chat 🤖</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
+
 <body>
 
-<!-- خلفية نجوم -->
 <canvas id="stars"></canvas>
 
-<!-- واجهة الدردشة -->
-<div class="chat-box">
-    <h1>💬 دردشة Mister AI 🤖</h1>
+<div class="chat-container">
 
-    <div id="messages"></div>
+    <h1 class="title">🤖 دردشة Mister AI 💬</h1>
 
-    <input id="msg" placeholder="اكتب رسالتك هنا...">
-    <button onclick="sendMessage()">إرسال</button>
+    <div id="users" class="users-list"></div>
 
-    <div>
-        <button class="emoji-btn" onclick="addEmoji('😀')">😀</button>
-        <button class="emoji-btn" onclick="addEmoji('🔥')">🔥</button>
-        <button class="emoji-btn" onclick="addEmoji('🤖')">🤖</button>
-        <button class="emoji-btn" onclick="addEmoji('❤️')">❤️</button>
-        <button class="emoji-btn" onclick="addEmoji('🚀')">🚀</button>
+    <div id="messages" class="messages"></div>
+
+    <div class="input-section">
+        <input id="msg" placeholder="اكتب رسالتك هنا..." />
+        <button onclick="sendMessage()">إرسال</button>
     </div>
+
+    <div class="emoji-bar">
+        <button onclick="addEmoji('🚀')">🚀</button>
+        <button onclick="addEmoji('❤️')">❤️</button>
+        <button onclick="addEmoji('🤖')">🤖</button>
+        <button onclick="addEmoji('🔥')">🔥</button>
+        <button onclick="addEmoji('😄')">😄</button>
+    </div>
+
+    <button class="voice-btn" id="voiceBtn">🎤 اضغط وتحدث</button>
+
 </div>
 
-<!-- سكريبت النجوم -->
 <script>
-const canvas = document.getElementById("stars");
-const ctx = canvas.getContext("2d");
+// الاتصال بالسيرفر
+const socket = io();
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let stars = [];
-
-class Star {
-    constructor() {
-        this.reset();
-    }
-    reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * -canvas.height;
-        this.size = Math.random() * 2 + 0.3;
-        this.speed = Math.random() * 2 + 0.5;
-        this.alpha = Math.random() * 0.7 + 0.3;
-    }
-    update() {
-        this.y += this.speed;
-        if (this.y > canvas.height) this.reset();
-    }
-    draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0,255,200,${this.alpha})`;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#00ffc8";
-        ctx.fill();
-    }
-}
-
-for (let i = 0; i < 200; i++) stars.push(new Star());
-
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    stars.forEach(s => { s.update(); s.draw(); });
-    requestAnimationFrame(animate);
-}
-animate();
-
-window.onresize = () => {
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
-};
-</script>
-
-<!-- سكريبت الدردشة -->
-<script>
+// إرسال رسالة
 function sendMessage() {
-    let txt = document.getElementById("msg");
-    if (txt.value.trim() === "") return;
+    let input = document.getElementById("msg");
+    if (input.value.trim() === "") return;
 
+    socket.emit("chatMessage", input.value);
+    input.value = "";
+}
+
+// استقبال رسالة
+socket.on("chatMessage", (msg) => {
     let box = document.getElementById("messages");
     let div = document.createElement("div");
     div.className = "message";
-    div.innerText = txt.value;
-
+    div.innerHTML = msg;
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
-    txt.value = "";
+});
+
+// إضافة إموجي
+function addEmoji(e) {
+    document.getElementById("msg").value += e;
 }
 
-function addEmoji(emoji) {
-    document.getElementById("msg").value += emoji;
+// ====== الصوت Push-To-Talk ======
+let voiceBtn = document.getElementById("voiceBtn");
+let mediaRecorder;
+let chunks = [];
+
+voiceBtn.onmousedown = async () => {
+    voiceBtn.innerHTML = "🎙️ جاري التسجيل…";
+    let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.start();
+
+    mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+};
+
+voiceBtn.onmouseup = () => {
+    voiceBtn.innerHTML = "🎤 اضغط وتحدث";
+    mediaRecorder.stop();
+
+    mediaRecorder.onstop = () => {
+        let blob = new Blob(chunks, { type: "audio/webm" });
+        chunks = [];
+        let reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+            socket.emit("voiceMessage", reader.result);
+        };
+    };
+};
+
+// استقبال صوت
+socket.on("voiceMessage", (audio) => {
+    let audioElem = document.createElement("audio");
+    audioElem.controls = true;
+    audioElem.src = audio;
+
+    let box = document.getElementById("messages");
+    let wrap = document.createElement("div");
+    wrap.className = "message";
+    wrap.appendChild(audioElem);
+
+    box.appendChild(wrap);
+    box.scrollTop = box.scrollHeight;
+});
+
+// ===== خلفية نجوم تتساقط =====
+const canvas = document.getElementById("stars");
+const ctx = canvas.getContext("2d");
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+let stars = [];
+for (let i = 0; i < 200; i++) {
+    stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        s: Math.random() * 2,
+        sp: Math.random() * 2 + 0.5
+    });
 }
+
+function animateStars() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(st => {
+        st.y += st.sp;
+        if (st.y > canvas.height) {
+            st.y = -5;
+            st.x = Math.random() * canvas.width;
+        }
+        ctx.fillStyle = "#00ffc8";
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.s, 0, 2 * Math.PI);
+        ctx.fill();
+    });
+    requestAnimationFrame(animateStars);
+}
+animateStars();
 </script>
 
 </body>
