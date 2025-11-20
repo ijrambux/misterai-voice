@@ -16,14 +16,11 @@ for (let i = 0; i < 200; i++) {
 
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    stars.forEach(st => {
+    stars.forEach(s => {
         ctx.fillStyle = "#00ffc8";
-        ctx.fillRect(st.x, st.y, st.s, st.s);
-        st.y += st.sp;
-        if (st.y > canvas.height) {
-            st.y = 0;
-            st.x = Math.random() * canvas.width;
-        }
+        ctx.fillRect(s.x, s.y, s.s, s.s);
+        s.y += s.sp;
+        if (s.y > canvas.height) s.y = 0;
     });
     requestAnimationFrame(animate);
 }
