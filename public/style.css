@@ -1,26 +1,105 @@
-const canvas = document.getElementById("stars");
-const ctx = canvas.getContext("2d");
-canvas.width = innerWidth;
-canvas.height = innerHeight;
-
-let stars = [];
-for (let i = 0; i < 200; i++) {
-    stars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        s: Math.random() * 2,
-        sp: Math.random() * 2 + 0.5
-    });
+body {
+    margin: 0;
+    background: #000;
+    color: #fff;
+    font-family: Tahoma;
+    overflow: hidden;
 }
 
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    stars.forEach(s => {
-        ctx.fillStyle = "#00ffc8";
-        ctx.fillRect(s.x, s.y, s.s, s.s);
-        s.y += s.sp;
-        if (s.y > canvas.height) s.y = 0;
-    });
-    requestAnimationFrame(animate);
+#stars {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
 }
-animate();
+
+/* login */
+.login-box {
+    width: 350px;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid #00ffc8;
+    padding: 25px;
+    margin: 10% auto;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 0 20px #00ffc8;
+}
+
+.login-box input {
+    width: 90%;
+    padding: 12px;
+    background: #000;
+    border: 2px solid #00ffc8;
+    border-radius: 10px;
+    color: #00ffc8;
+    margin-top: 15px;
+}
+
+.login-box button {
+    margin-top: 15px;
+    padding: 12px 20px;
+    background: #4d3cff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #fff;
+}
+
+/* chat */
+.chat-container {
+    width: 70%;
+    margin: 5% auto;
+    background: rgba(0,0,0,0.55);
+    padding: 25px;
+    border-radius: 20px;
+    border: 3px solid #00ffc8;
+    box-shadow: 0 0 40px #00ffc8;
+}
+
+.title {
+    text-align: center;
+    font-size: 30px;
+    color: #00ffc8;
+}
+
+.messages {
+    height: 400px;
+    overflow-y: auto;
+    padding: 15px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 12px;
+    border: 1px solid #00ffc8;
+}
+
+.msg {
+    padding: 10px;
+    margin-top: 10px;
+    background: rgba(255,255,255,0.05);
+    border-left: 3px solid #4d3cff;
+    border-radius: 8px;
+}
+
+.input-area {
+    display: flex;
+    margin-top: 20px;
+    gap: 10px;
+}
+
+.input-area input {
+    flex: 1;
+    padding: 12px;
+    color: #00ffc8;
+    background: #000;
+    border: 2px solid #00ffc8;
+    border-radius: 10px;
+}
+
+.input-area button {
+    padding: 12px 18px;
+    background: #4d3cff;
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+}
+
