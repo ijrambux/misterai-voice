@@ -1,6 +1,7 @@
 {
-  "name": "misterai-chat",
+  "name": "misterai-voice",
   "version": "1.0.0",
+  "description": "MisterAI voice & text chat with login and neon UI",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
