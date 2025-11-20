@@ -45,48 +45,50 @@ socket.on("chatMessage", data => {
     box.scrollTop = box.scrollHeight;
 });
 
-// إرسال صوت
+// الصوت
 let chunks = [];
 let mediaRecorder;
-navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    mediaRecorder = new MediaRecorder(stream);
-    mediaRecorder.ondataavailable = e => chunks.push(e.data);
-});
 
-// زر الصوت
+navigator.mediaDevices.getUserMedia({ audio: true })
+.then(stream => mediaRecorder = new MediaRecorder(stream));
+
 document.getElementById("voiceBtn").onmousedown = () => {
     mediaRecorder.start();
-    document.getElementById("voiceBtn").innerHTML = "🎙️ تسجيل...";
+    voiceBtn.innerHTML = "🎙️ تسجيل...";
 };
 
 document.getElementById("voiceBtn").onmouseup = () => {
     mediaRecorder.stop();
-    document.getElementById("voiceBtn").innerHTML = "🎤 اضغط وتحدث";
+    voiceBtn.innerHTML = "🎤 اضغط وتحدث";
 
     mediaRecorder.onstop = () => {
         let blob = new Blob(chunks, { type: "audio/webm" });
         chunks = [];
-
         let reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = () => {
-            socket.emit("voiceMessage", { user: username, audio: reader.result });
+            socket.emit("voiceMessage", {
+                user: username,
+                audio: reader.result
+            });
         };
     };
+
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
 };
 
-// استلام صوت
+// استقبال صوت
 socket.on("voiceMessage", data => {
     let box = document.getElementById("messages");
     let wrap = document.createElement("div");
     wrap.className = "msg";
     wrap.innerHTML = `<strong>${data.user} 🎤:</strong><br>`;
 
-    let audioElem = document.createElement("audio");
-    audioElem.controls = true;
-    audioElem.src = data.audio;
+    let audio = document.createElement("audio");
+    audio.controls = true;
+    audio.src = data.audio;
 
-    wrap.appendChild(audioElem);
+    wrap.appendChild(audio);
     box.appendChild(wrap);
     box.scrollTop = box.scrollHeight;
 });
