@@ -2,98 +2,59 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>Mister AI Chat</title>
+<title>MisterAI GPT 🤖</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 
 <body>
+
 <canvas id="stars"></canvas>
 
-<div class="chat-container">
+<div class="gpt-box">
 
-    <h1 class="title">🤖 دردشة Mister AI 💬</h1>
+    <h1>🤖 MisterAI GPT</h1>
 
-    <div id="messages" class="messages"></div>
+    <textarea id="prompt" placeholder="اكتب سؤالك هنا..."></textarea>
 
-    <div class="input-area">
-        <button id="voiceBtn">🎤 اضغط وتحدث</button>
-        <input id="msg" placeholder="اكتب رسالتك هنا...">
-        <button onclick="sendMessage()">إرسال</button>
-    </div>
+    <button onclick="askAI()">إرسال</button>
+
+    <div id="response" class="response"></div>
+
 </div>
 
+<script src="stars.js"></script>
+
 <script>
-const socket = io();
-const username = localStorage.getItem("nickname") || "مجهول";
+async function askAI() {
+    const q = document.getElementById("prompt").value.trim();
+    const box = document.getElementById("response");
 
-// إرسال نص
-function sendMessage() {
-    let input = document.getElementById("msg");
-    if (input.value.trim() === "") return;
-    socket.emit("chatMessage", { user: username, text: input.value });
-    input.value = "";
+    if (!q) {
+        box.innerHTML = "⚠️ اكتب سؤال أو طلب.";
+        return;
+    }
+
+    box.innerHTML = "⏳ جاري التحليل...";
+
+    try {
+        const res = await axios.post("https://api.openai.com/v1/chat/completions", {
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: q }]
+        }, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer YOUR_API_KEY"
+            }
+        });
+
+        box.innerHTML = res.data.choices[0].message.content;
+
+    } catch (e) {
+        box.innerHTML = "❌ خطأ: المفتاح غير صالح أو API غير مفعلة.";
+    }
 }
-
-// استلام نص
-socket.on("chatMessage", data => {
-    let box = document.getElementById("messages");
-    let div = document.createElement("div");
-    div.className = "msg";
-    div.innerHTML = `<strong>${data.user}:</strong> ${data.text}`;
-    box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
-});
-
-// الصوت
-let chunks = [];
-let mediaRecorder;
-
-navigator.mediaDevices.getUserMedia({ audio: true })
-.then(stream => mediaRecorder = new MediaRecorder(stream));
-
-document.getElementById("voiceBtn").onmousedown = () => {
-    mediaRecorder.start();
-    voiceBtn.innerHTML = "🎙️ تسجيل...";
-};
-
-document.getElementById("voiceBtn").onmouseup = () => {
-    mediaRecorder.stop();
-    voiceBtn.innerHTML = "🎤 اضغط وتحدث";
-
-    mediaRecorder.onstop = () => {
-        let blob = new Blob(chunks, { type: "audio/webm" });
-        chunks = [];
-        let reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = () => {
-            socket.emit("voiceMessage", {
-                user: username,
-                audio: reader.result
-            });
-        };
-    };
-
-    mediaRecorder.ondataavailable = e => chunks.push(e.data);
-};
-
-// استقبال صوت
-socket.on("voiceMessage", data => {
-    let box = document.getElementById("messages");
-    let wrap = document.createElement("div");
-    wrap.className = "msg";
-    wrap.innerHTML = `<strong>${data.user} 🎤:</strong><br>`;
-
-    let audio = document.createElement("audio");
-    audio.controls = true;
-    audio.src = data.audio;
-
-    wrap.appendChild(audio);
-    box.appendChild(wrap);
-    box.scrollTop = box.scrollHeight;
-});
 </script>
 
-<script src="stars.js"></script>
 </body>
 </html>
